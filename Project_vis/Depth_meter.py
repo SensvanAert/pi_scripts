@@ -9,13 +9,13 @@ GPIO.setup(25, GPIO.IN)
 
 aquariumDepth = 50
 actualDepth = 0
+GPIO.output(8, 0)
 
 try:
     while(True):
         GPIO.output(17, 1)
         time.sleep(0.00001)
         GPIO.output(17, 0)
-        # GPIO.output(8, 0)
 
         while(GPIO.input(18) == 0):
             pass
@@ -32,10 +32,10 @@ try:
         print(str(actualDepth))
         time.sleep(0.5)
 
-        if(actualDepth >= 40 or GPIO.input(25) == 1):
-            GPIO.output(8, 0)
-        else:
+        if(actualDepth < 40):
             GPIO.output(8, 1)
+        if(actualDepth > 45):
+            GPIO.output(8, 0)
 
 
 except KeyboardInterrupt:
