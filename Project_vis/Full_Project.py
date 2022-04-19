@@ -137,6 +137,7 @@ feederThread = threading.Thread(target=feeder)
 # Starting the threads
 lightThread.start()
 depthThread.start()
+feederThread.start()
 
 try:
     while(True):
