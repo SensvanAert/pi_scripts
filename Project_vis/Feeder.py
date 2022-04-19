@@ -12,7 +12,7 @@ GPIO.setup(9, GPIO.OUT)
 
 #main program stepper motor #GPIO23, #GPIO24, #GPIO10, #GPIO9 infinity
 try:
-    while(1):
+    while True:
         while (GPIO.input(27) == 0):
             GPIO.output(23, 1)
             GPIO.output(24, 1)
