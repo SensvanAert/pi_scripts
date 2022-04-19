@@ -21,42 +21,34 @@ GPIO.setup(10, GPIO.OUT)
 GPIO.setup(9, GPIO.OUT)
 
 exit_event = threading.Event()
-toggle = 0
-aquariumDepth = 50
-actualDepth = 0
-depthActive = 0
-buttonActive = 0
-
 
 GPIO.output(8, 0)
 GPIO.output(1, 0)
+GPIO.output(24, 0)
+GPIO.output(10, 0)
+GPIO.output(9, 0)
 
-# def light ():
-#     while True:
-#         if(GPIO.input(7) == 0):
-#             if(toggle == 0):
-#                 GPIO.output(1, 0)
-#                 toggle = 1
-#             else:
-#                 GPIO.output(1, 1)
-#                 toggle = 0
-#             time.sleep(0.3)
+def light ():
+    toggle = 0
+    while True:
+        if(GPIO.input(7) == 0):
+            if(toggle == 0):
+                GPIO.output(1, 1)
+                toggle = 1
+            else:
+                GPIO.output(1, 0)
+                toggle = 0
+            time.sleep(0.3)
 
-#         if exit_event.is_set():
-#             break
-
-# def pump ():
-#     while True:
-#         if(GPIO.input(25) == 0):
-#             GPIO.output(8, 1)
-#             time.sleep(0.2)
-#         else:
-#             GPIO.output(8, 0)
-
-#         if exit_event.is_set():
-#             break
+        if exit_event.is_set():
+            break
 
 def depthAndPump():
+    aquariumDepth = 50
+    actualDepth = 0
+    depthActive = 0
+    buttonActive = 0
+
     while True:
         GPIO.output(17, 1)
         time.sleep(0.00001)
@@ -138,14 +130,12 @@ def feeder ():
 
 
 # All Threads
-# lightThread = threading.Thread(target=light)
-# pumpThread = threading.Thread(target=pump)
+lightThread = threading.Thread(target=light)
 depthThread = threading.Thread(target=depthAndPump)
 feederThread = threading.Thread(target=feeder)
 
 # Starting the threads
-# lightThread.start()
-# pumpThread.start()
+lightThread.start()
 depthThread.start()
 
 try:
