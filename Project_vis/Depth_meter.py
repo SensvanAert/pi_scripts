@@ -15,6 +15,7 @@ try:
         GPIO.output(17, 1)
         time.sleep(0.00001)
         GPIO.output(17, 0)
+        # GPIO.output(8, 0)
 
         while(GPIO.input(18) == 0):
             pass
@@ -32,9 +33,9 @@ try:
         time.sleep(0.5)
 
         if(actualDepth >= 40 or GPIO.input(25) == 1):
-            GPIO.output(8, 1)
-        else:
             GPIO.output(8, 0)
+        else:
+            GPIO.output(8, 1)
 
 
 except KeyboardInterrupt:
