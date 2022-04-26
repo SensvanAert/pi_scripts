@@ -112,8 +112,6 @@ def feeder ():
             enableFeeder = 1
             counter = 0
 
-
-
         while GPIO.input(27) == 0 or enableFeeder == 1:
             if enableFeeder == 1:
                 counter +=1
