@@ -10,33 +10,45 @@ GPIO.setup(17, GPIO.OUT)
 GPIO.setup(25, GPIO.IN)
 GPIO.setup(8, GPIO.OUT)
 #Light pins
-GPIO.setup(7, GPIO.IN)
-GPIO.setup(1, GPIO.OUT)
+GPIO.setup(23, GPIO.IN)
+GPIO.setup(24, GPIO.OUT)
 #Feeder pins
 GPIO.setup(27, GPIO.IN)
 GPIO.setup(22, GPIO.IN)
-GPIO.setup(23, GPIO.OUT)
-GPIO.setup(24, GPIO.OUT)
-GPIO.setup(10, GPIO.OUT)
-GPIO.setup(9, GPIO.OUT)
+GPIO.setup(7, GPIO.OUT)
+GPIO.setup(1, GPIO.OUT)
+GPIO.setup(5, GPIO.OUT)
+GPIO.setup(6, GPIO.OUT)
 
 exit_event = threading.Event()
 
-GPIO.output(8, 0)
+GPIO.output(8, 1)
+GPIO.output(24, 1)
+GPIO.output(7, 0)
 GPIO.output(1, 0)
-GPIO.output(24, 0)
-GPIO.output(10, 0)
-GPIO.output(9, 0)
+GPIO.output(5, 0)
+GPIO.output(6, 0)
 
 def light ():
     toggle = 0
     while True:
-        if(GPIO.input(7) == 0):
-            if(toggle == 0):
-                GPIO.output(1, 1)
+        timestamp = time.localtime()
+        current_time =  time.strftime("%H:%M:%S", timestamp)
+
+        if current_time == "20:00:00":
+            GPIO.output(24, 0)
+            toggle = 1
+
+        if current_time == "00:00:00":
+            GPIO.output(24, 1)
+            toggle = 0
+
+        if GPIO.input(23) == 0:
+            if toggle == 0:
+                GPIO.output(24, 0)
                 toggle = 1
             else:
-                GPIO.output(1, 0)
+                GPIO.output(24, 1)
                 toggle = 0
             time.sleep(0.3)
 
@@ -44,7 +56,7 @@ def light ():
             break
 
 def depthAndPump():
-    aquariumDepth = 50
+    aquariumDepth = 20
     actualDepth = 0
     depthActive = 0
     buttonActive = 0
@@ -67,63 +79,74 @@ def depthAndPump():
         distance = 17000 * timePassed
         actualDepth = aquariumDepth - distance
         print(str(actualDepth))
-        time.sleep(0.5)
-
-        # if(actualDepth < 40 or GPIO.input(25) == 0):
-        #     GPIO.output(8, 1)
-        # elif(actualDepth > 45 and GPIO.input(25) == 1):
-        #     GPIO.output(8, 0)
+        time.sleep(0.2)
         
-        if (actualDepth < 40 and buttonActive == 0):
+        if (actualDepth < 14 and buttonActive == 0):
             depthActive = 1
-            GPIO.output(8, 1)
-        
-        if (actualDepth > 45 and depthActive == 1):
-            depthActive = 0
             GPIO.output(8, 0)
+        
+        if (actualDepth > 17 and depthActive == 1):
+            depthActive = 0
+            GPIO.output(8, 1)
         
         if (GPIO.input(25) == 0 and depthActive == 0):
             buttonActive = 1
-            GPIO.output(8, 1)
+            GPIO.output(8, 0)
         
         if (GPIO.input(25) == 1 and buttonActive == 1):
             buttonActive = 0
-            GPIO.output(8, 0)
+            GPIO.output(8, 1)
 
         if exit_event.is_set():
             break
 
 def feeder ():
-    while True:
-        while (GPIO.input(27) == 0):
-            GPIO.output(23, 1)
-            GPIO.output(24, 1)
-            time.sleep(0.01)
-            GPIO.output(23, 0)
-            GPIO.output(10, 1)
-            time.sleep(0.01)
-            GPIO.output(24, 0)
-            GPIO.output(9, 1)
-            time.sleep(0.01)
-            GPIO.output(10, 0)
-            GPIO.output(23, 1)
-            time.sleep(0.01)
-            GPIO.output(9, 0)
+    counter = 0
+    enableFeeder = 0
 
-        while (GPIO.input(22) == 0):
-            GPIO.output(9, 1)
-            GPIO.output(10, 1)
+    while True:
+        Timestamp = time.localtime()
+        current_time =  time.strftime("%H:%M:%S", Timestamp)
+
+        if current_time == "18:00:00" or current_time == "06:00:00":
+            enableFeeder = 1
+            counter = 0
+
+
+
+        while GPIO.input(27) == 0 or enableFeeder == 1:
+            if enableFeeder == 1:
+                counter +=1
+            if counter == 125:
+                enableFeeder = 0
+            GPIO.output(7, 1)
+            GPIO.output(1, 1)
             time.sleep(0.01)
-            GPIO.output(9, 0)
-            GPIO.output(24, 1)
+            GPIO.output(7, 0)
+            GPIO.output(5, 1)
             time.sleep(0.01)
-            GPIO.output(10, 0)
-            GPIO.output(23, 1)
+            GPIO.output(1, 0)
+            GPIO.output(6, 1)
             time.sleep(0.01)
-            GPIO.output(24, 0)
-            GPIO.output(9, 1)
+            GPIO.output(5, 0)
+            GPIO.output(7, 1)
             time.sleep(0.01)
-            GPIO.output(23, 0)
+            GPIO.output(6, 0)
+
+        while GPIO.input(22) == 0:
+            GPIO.output(6, 1)
+            GPIO.output(5, 1)
+            time.sleep(0.01)
+            GPIO.output(6, 0)
+            GPIO.output(1, 1)
+            time.sleep(0.01)
+            GPIO.output(5, 0)
+            GPIO.output(7, 1)
+            time.sleep(0.01)
+            GPIO.output(1, 0)
+            GPIO.output(6, 1)
+            time.sleep(0.01)
+            GPIO.output(7, 0)
 
         if exit_event.is_set():
             break
@@ -141,8 +164,11 @@ feederThread.start()
 
 try:
     while(True):
+        t = time.localtime()
+        current_time = time.strftime("%H:%M:%S", t)
+        print(current_time)
         print("Still working")
-        time.sleep(5.0)
+        time.sleep(1.0)
 
 except KeyboardInterrupt:
     exit_event.set()
