@@ -1,0 +1,15 @@
+Depth_meter.py
+	inputs: GPIO 18
+	outputs: GPIO 17
+
+Feeder.py
+	inputs: GPIO 27, 22
+	outputs: GPIO 23, 24, 10, 9
+
+pump.py
+	inputs: GPIO 25
+	ouputs: GPIO 8
+
+Light.py
+	inputs: GPIO 7
+	outputs: GPIO 1
