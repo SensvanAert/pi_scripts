@@ -4,12 +4,12 @@ Depth_meter.py
 
 Feeder.py
 	inputs: GPIO 27, 22
-	outputs: GPIO 23, 24, 10, 9
+	outputs: GPIO 7, 1, 5, 6
 
 pump.py
 	inputs: GPIO 25
 	ouputs: GPIO 8
 
 Light.py
-	inputs: GPIO 7
-	outputs: GPIO 1
+	inputs: GPIO 23
+	outputs: GPIO 24

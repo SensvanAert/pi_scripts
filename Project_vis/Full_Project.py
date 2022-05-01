@@ -44,6 +44,7 @@ def light ():
             toggle = 0
 
         if GPIO.input(23) == 0:
+            print("pressed button")
             if toggle == 0:
                 GPIO.output(24, 0)
                 toggle = 1
@@ -56,7 +57,7 @@ def light ():
             break
 
 def depthAndPump():
-    aquariumDepth = 20
+    aquariumDepth = 25
     actualDepth = 0
     depthActive = 0
     buttonActive = 0
@@ -162,9 +163,9 @@ feederThread.start()
 
 try:
     while(True):
-        t = time.localtime()
-        current_time = time.strftime("%H:%M:%S", t)
-        print(current_time)
+        # t = time.localtime()
+        # current_time = time.strftime("%H:%M:%S", t)
+        # print(current_time)
         print("Still working")
         time.sleep(1.0)
 
