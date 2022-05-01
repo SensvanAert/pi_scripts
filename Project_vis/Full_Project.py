@@ -80,7 +80,10 @@ def depthAndPump():
         distance = 17000 * timePassed
         actualDepth = aquariumDepth - distance
         print(str(actualDepth))
-        time.sleep(0.2)
+        if depthActive == 1 or buttonActive == 1:
+            time.sleep(0.2)
+        else:
+            time.sleep(1.0)
         
         if (actualDepth < 14 and buttonActive == 0):
             depthActive = 1
@@ -120,31 +123,31 @@ def feeder ():
                 enableFeeder = 0
             GPIO.output(7, 1)
             GPIO.output(1, 1)
-            time.sleep(0.01)
+            time.sleep(0.001)
             GPIO.output(7, 0)
             GPIO.output(5, 1)
-            time.sleep(0.01)
+            time.sleep(0.001)
             GPIO.output(1, 0)
             GPIO.output(6, 1)
-            time.sleep(0.01)
+            time.sleep(0.001)
             GPIO.output(5, 0)
             GPIO.output(7, 1)
-            time.sleep(0.01)
+            time.sleep(0.001)
             GPIO.output(6, 0)
 
         while GPIO.input(22) == 0:
             GPIO.output(6, 1)
             GPIO.output(5, 1)
-            time.sleep(0.01)
+            time.sleep(0.001)
             GPIO.output(6, 0)
             GPIO.output(1, 1)
-            time.sleep(0.01)
+            time.sleep(0.001)
             GPIO.output(5, 0)
             GPIO.output(7, 1)
-            time.sleep(0.01)
+            time.sleep(0.001)
             GPIO.output(1, 0)
             GPIO.output(6, 1)
-            time.sleep(0.01)
+            time.sleep(0.001)
             GPIO.output(7, 0)
 
         if exit_event.is_set():
