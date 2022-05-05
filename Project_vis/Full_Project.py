@@ -22,6 +22,7 @@ GPIO.setup(25, GPIO.IN)
 GPIO.setup(8, GPIO.OUT)
 #Light pins
 GPIO.setup(20, GPIO.IN)
+GPIO.setup(2, GPIO.IN)  # 15 min
 GPIO.setup(21, GPIO.OUT)
 #Feeder pins
 GPIO.setup(27, GPIO.IN)
@@ -63,11 +64,20 @@ GPIO.output(6, 0)
 
 def light ():
     count = 0
+    timer = 0
     global toggle
     while True:
         timestamp = time.localtime()
         current_time =  time.strftime("%H:%M:%S", timestamp)
 
+        if GPIO.input(2) == 0:
+            if timer == 0:
+                timer = 1
+                timestamp = time.localtime()
+                min_15 =  time.strftime("%M:%S", timestamp)
+                GPIO.output(21, 0)
+                toggle = 1
+            
         if current_time == "20:00:00":
             GPIO.output(21, 0)
             toggle = 1
@@ -226,7 +236,6 @@ def LCD ():
         
         turnOff = '24:00:00' - current_time
 
-        nummer=4
         draw.text((1,0), current_time, font=font)
         draw.text((1,8), 'Water depth: ' + str(actualDepth) + 'cm', font=font)
         draw.text((1,16), 'Next feeding: ' + feeding_time, font=font)
@@ -273,7 +282,7 @@ sendDataThread = threading.Thread(target=sendData)
 lightThread.start()
 depthThread.start()
 feederThread.start()
-lcdThread.start()
+# lcdThread.start()
 sendDataThread.start()
 
 try:
