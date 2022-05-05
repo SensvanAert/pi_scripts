@@ -11,7 +11,7 @@ pump.py
 	ouputs: GPIO 8
 
 Light.py
-	inputs: GPIO 20
+	inputs: GPIO 20, GPIO2(15 min)
 	outputs: GPIO 21
 
 LCD.py
