@@ -8,6 +8,10 @@ import digitalio
 import board
 import requests
 from adafruit_bus_device.spi_device import SPIDevice
+import adafruit_pcd8544
+from PIL import Image
+from PIL import ImageDraw
+from PIL import ImageFont
 
 GPIO.setmode(GPIO.BCM)
 #Depth pins
@@ -33,6 +37,15 @@ spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
 # Initialize control pins for adc
 cs0 = digitalio.DigitalInOut(board.CE0)  # chip select CE0 for adc
 adc = SPIDevice(spi, cs0, baudrate= 1000000)
+
+# Initialize display
+dc = digitalio.DigitalInOut(board.D23)  # data/command
+cs1 = digitalio.DigitalInOut(board.CE1)  # chip select CE1 for display
+reset = digitalio.DigitalInOut(board.D24)  # reset
+display = adafruit_pcd8544.PCD8544(spi, dc, cs1, reset, baudrate= 1000000)
+display.bias = 4
+display.contrast = 60
+display.invert = True
 
 exit_event = threading.Event()
 url = 'http://sensvanaert.hub.ubeac.io/iotesssensvanaert'
@@ -180,6 +193,51 @@ def feeder ():
         if exit_event.is_set():
             break
 
+def LCD ():
+    while True:
+        #  Clear the display.  Always call show after changing pixels to make the display update visible!
+        display.fill(0)
+        display.show()
+
+        # Load default font.
+        font = ImageFont.load_default()
+        #font=ImageFont.truetype("/usr/share/fonts/truetype/freefont/FreeSansBold.ttf", 10)
+
+        # Get drawing object to draw on image
+        image = Image.new('1', (display.width, display.height)) 
+        draw = ImageDraw.Draw(image)
+ 	
+        # Draw a white filled box to clear the image.
+        draw.rectangle((0, 0, display.width, display.height), outline=255, fill=255)
+
+        # Write text
+        Timestamp = time.localtime()
+        current_time =  time.strftime("%H:%M:%S", Timestamp)
+
+        if current_time < '18:00:00' and current_time > '06:00:00':
+            feeding_time = '18:00:00'
+        else:
+            feeding_time = '6:00:00'
+        
+        if toggle == 1:
+            lampStatus = 'ON'
+        else:
+            lampStatus = 'OFF'
+        
+        turnOff = '24:00:00' - current_time
+
+        nummer=4
+        draw.text((1,0), current_time, font=font)
+        draw.text((1,8), 'Water depth: ' + str(actualDepth) + 'cm', font=font)
+        draw.text((1,16), 'Next feeding: ' + feeding_time, font=font)
+        draw.text((1,24), 'Lamp status: ' + lampStatus, font=font)
+        draw.text((1,32), 'Turn off lamp in: ' + turnOff + ' hours', font=font)
+        display.image(image)
+        display.show()
+
+        if exit_event.is_set():
+            break
+
 def sendData ():
     while True:
         data= {
@@ -208,12 +266,14 @@ def sendData ():
 lightThread = threading.Thread(target=light)
 depthThread = threading.Thread(target=depthAndPump)
 feederThread = threading.Thread(target=feeder)
+lcdThread = threading.Thread(target=LCD)
 sendDataThread = threading.Thread(target=sendData)
 
 # Starting the threads
 lightThread.start()
 depthThread.start()
 feederThread.start()
+lcdThread.start()
 sendDataThread.start()
 
 try:
