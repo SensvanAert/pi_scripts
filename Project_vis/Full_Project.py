@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 import RPi.GPIO as GPIO
 import time
 import threading
@@ -63,8 +64,9 @@ GPIO.output(5, 0)
 GPIO.output(6, 0)
 
 def light ():
-    count = 0
+    pressed = 0
     timer = 0
+    end_time = datetime.strptime('00:00:00', "%H:%M:%S")
     global toggle
     while True:
         timestamp = time.localtime()
@@ -73,10 +75,17 @@ def light ():
         if GPIO.input(2) == 0:
             if timer == 0:
                 timer = 1
-                timestamp = time.localtime()
-                min_15 =  time.strftime("%M:%S", timestamp)
+                print(end_time.strftime("%H:%M:%S"))
+                end_time = datetime.strptime(current_time, "%H:%M:%S") + timedelta(minutes=1)
+                print(end_time.strftime("%H:%M:%S"))
                 GPIO.output(21, 0)
                 toggle = 1
+        
+        if current_time == end_time.strftime("%H:%M:%S") and timer == 1:
+            print("Turn the light off")
+            timer = 0
+            GPIO.output(21, 1)
+            toggle = 0
             
         if current_time == "20:00:00":
             GPIO.output(21, 0)
@@ -87,17 +96,18 @@ def light ():
             toggle = 0
 
         if GPIO.input(20) == 0:
-            if toggle == 0 and count == 0:
+            if toggle == 0 and pressed == 0:
                 GPIO.output(21, 0)
                 toggle = 1
-            elif count == 0:
+            elif pressed == 0:
                 GPIO.output(21, 1)
                 toggle = 0
-            count = 1
+                timer = 0
+            pressed = 1
             time.sleep(0.3)
 
         if GPIO.input(20) == 1:
-            count = 0
+            pressed = 0
 
         if exit_event.is_set():
             break
