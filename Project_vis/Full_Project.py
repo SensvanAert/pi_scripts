@@ -33,6 +33,13 @@ GPIO.setup(1, GPIO.OUT)
 GPIO.setup(5, GPIO.OUT)
 GPIO.setup(6, GPIO.OUT)
 
+GPIO.output(8, 1)
+GPIO.output(21, 1)
+GPIO.output(9, 0)
+GPIO.output(1, 0)
+GPIO.output(5, 0)
+GPIO.output(6, 0)
+
 # Initialize SPI bus
 spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
 
@@ -56,13 +63,6 @@ toggle = 0
 pump = 0
 actualDepth = 0
 
-GPIO.output(8, 1)
-GPIO.output(21, 1)
-GPIO.output(9, 0)
-GPIO.output(1, 0)
-GPIO.output(5, 0)
-GPIO.output(6, 0)
-
 def light ():
     pressed = 0
     timer = 0
@@ -75,7 +75,6 @@ def light ():
         if GPIO.input(2) == 0:
             if timer == 0:
                 timer = 1
-                print(end_time.strftime("%H:%M:%S"))
                 end_time = datetime.strptime(current_time, "%H:%M:%S") + timedelta(minutes=1)
                 print(end_time.strftime("%H:%M:%S"))
                 GPIO.output(21, 0)
