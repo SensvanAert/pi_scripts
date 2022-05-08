@@ -17,44 +17,29 @@ from PIL import ImageFont
 GPIO.setmode(GPIO.BCM)
 #Depth pins
 GPIO.setup(18, GPIO.IN)
-GPIO.setup(17, GPIO.OUT)
+GPIO.setup(17, GPIO.OUT)    # trigger
 #Pump pins
-GPIO.setup(25, GPIO.IN)
-GPIO.setup(8, GPIO.OUT)
+GPIO.setup(25, GPIO.IN)     # Pump on
+GPIO.setup(14, GPIO.OUT)     # pump (25)
 #Light pins
-GPIO.setup(20, GPIO.IN)
-GPIO.setup(2, GPIO.IN)  # 15 min
-GPIO.setup(21, GPIO.OUT)
+GPIO.setup(20, GPIO.IN)     # Light on/off
+GPIO.setup(2, GPIO.IN)      # 15 min
+GPIO.setup(21, GPIO.OUT)    # Light
 #Feeder pins
-GPIO.setup(27, GPIO.IN)
-GPIO.setup(22, GPIO.IN)
+GPIO.setup(27, GPIO.IN)     # StepperMotor left
+GPIO.setup(22, GPIO.IN)     # StepperMotor right
 GPIO.setup(9, GPIO.OUT)
 GPIO.setup(1, GPIO.OUT)
 GPIO.setup(5, GPIO.OUT)
 GPIO.setup(6, GPIO.OUT)
 
-GPIO.output(8, 1)
+# Turn all outputs off
+GPIO.output(14, 1)
 GPIO.output(21, 1)
 GPIO.output(9, 0)
 GPIO.output(1, 0)
 GPIO.output(5, 0)
 GPIO.output(6, 0)
-
-# Initialize SPI bus
-spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
-
-# Initialize control pins for adc
-cs0 = digitalio.DigitalInOut(board.CE0)  # chip select CE0 for adc
-adc = SPIDevice(spi, cs0, baudrate= 1000000)
-
-# Initialize display
-dc = digitalio.DigitalInOut(board.D23)  # data/command
-cs1 = digitalio.DigitalInOut(board.CE1)  # chip select CE1 for display
-reset = digitalio.DigitalInOut(board.D24)  # reset
-display = adafruit_pcd8544.PCD8544(spi, dc, cs1, reset, baudrate= 1000000)
-display.bias = 4
-display.contrast = 60
-display.invert = True
 
 exit_event = threading.Event()
 url = 'http://sensvanaert.hub.ubeac.io/iotesssensvanaert'
@@ -62,11 +47,13 @@ uid = 'iotesssensvanaert'
 toggle = 0
 pump = 0
 actualDepth = 0
+timer = 0
+end_time = datetime.strptime('00:00:00', "%H:%M:%S")
 
 def light ():
     pressed = 0
-    timer = 0
-    end_time = datetime.strptime('00:00:00', "%H:%M:%S")
+    global end_time
+    global timer
     global toggle
     while True:
         timestamp = time.localtime()
@@ -113,52 +100,52 @@ def light ():
 
 def depthAndPump():
     global pump
-    aquariumDepth = 25
     global actualDepth
+    aquariumDepth = 25
     depthActive = 0
     buttonActive = 0
 
     while True:
-        GPIO.output(17, 1)
+        GPIO.output(17, 1)      # give pulse for distance meter
         time.sleep(0.00001)
         GPIO.output(17, 0)
 
-        while(GPIO.input(18) == 0):
+        while(GPIO.input(18) == 0): # do nothing if no signal is returned
             pass
 
-        signalHigh = time.time()
+        signalHigh = time.time()    # note time of received signal
 
-        while(GPIO.input(18) == 1):
+        while(GPIO.input(18) == 1): # how long is the signal received for
             pass
 
-        signalLow = time.time()
-        timePassed = signalLow - signalHigh
-        distance = 17000 * timePassed
-        actualDepth = round(aquariumDepth - distance, 2)
+        signalLow = time.time()                             # note time of how long is the signal received for
+        timePassed = signalLow - signalHigh                 # time passed is time when received minus time of the end of the signal
+        distance = 17000 * timePassed                       # formula to calculate the distance
+        actualDepth = round(aquariumDepth - distance, 2)    # Formula to calculate how high the water level is
         print(str(actualDepth))
 
-        if depthActive == 1 or buttonActive == 1:
+        if depthActive == 1 or buttonActive == 1:   # print every 0.2 seconds when pump activated else every 0.7 seconds
             pump = 1
             time.sleep(0.2)
         else:
             pump = 0
             time.sleep(0.7)
         
-        if (actualDepth < 14 and buttonActive == 0):
+        if (actualDepth < 14 and buttonActive == 0):    # Turn on if depth below 14 cm and pump not turned on by button
             depthActive = 1
-            GPIO.output(8, 0)
+            GPIO.output(14, 0)
         
-        if (actualDepth > 17 and depthActive == 1):
+        if (actualDepth > 17 and depthActive == 1):     # Turn off if depth above 17 cm and pump activated by depth
             depthActive = 0
-            GPIO.output(8, 1)
+            GPIO.output(14, 1)
         
-        if (GPIO.input(25) == 0 and depthActive == 0):
+        if (GPIO.input(25) == 0 and depthActive == 0):  # Turn on if button pressed and not activated by depth
             buttonActive = 1
-            GPIO.output(8, 0)
+            GPIO.output(14, 0)
         
-        if (GPIO.input(25) == 1 and buttonActive == 1):
+        if (GPIO.input(25) == 1 and buttonActive == 1): # Turn off button is not pressed and activated by button
             buttonActive = 0
-            GPIO.output(8, 1)
+            GPIO.output(14, 1)
 
         if exit_event.is_set():
             break
@@ -171,12 +158,12 @@ def feeder ():
         Timestamp = time.localtime()
         current_time =  time.strftime("%H:%M:%S", Timestamp)
 
-        if current_time == "18:00:00" or current_time == "06:00:00":
+        if current_time == "18:00:00" or current_time == "06:00:00":    # Feed fishes on 6am and 6pm
             enableFeeder = 1
             counter = 0
 
-        while GPIO.input(27) == 0 or enableFeeder == 1:
-            if enableFeeder == 1:
+        while GPIO.input(27) == 0 or enableFeeder == 1:     # Let feeder go forward
+            if enableFeeder == 1:   # Feeder will turn on for 5 seconds
                 counter +=1
             if counter == 125:
                 enableFeeder = 0
@@ -194,7 +181,7 @@ def feeder ():
             time.sleep(0.001)
             GPIO.output(6, 0)
 
-        while GPIO.input(22) == 0:
+        while GPIO.input(22) == 0:  # Let feeder go Backwards
             GPIO.output(6, 1)
             GPIO.output(5, 1)
             time.sleep(0.001)
@@ -213,19 +200,34 @@ def feeder ():
             break
 
 def LCD ():
-    while True:
-        #  Clear the display.  Always call show after changing pixels to make the display update visible!
-        display.fill(0)
-        display.show()
+    # Initialize SPI bus
+    spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
 
-        # Load default font.
-        font = ImageFont.load_default()
-        #font=ImageFont.truetype("/usr/share/fonts/truetype/freefont/FreeSansBold.ttf", 10)
+    # Initialize display
+    dc = digitalio.DigitalInOut(board.D23)  # data/command
+    cs1 = digitalio.DigitalInOut(board.CE1)  # chip select CE1 for display
+    reset = digitalio.DigitalInOut(board.D24)  # reset
+    display = adafruit_pcd8544.PCD8544(spi, dc, cs1, reset, baudrate= 1000000)
+    display.bias = 4
+    display.contrast = 60
+    display.invert = True
 
-        # Get drawing object to draw on image
-        image = Image.new('1', (display.width, display.height)) 
-        draw = ImageDraw.Draw(image)
+    #  Clear the display.  Always call show after changing pixels to make the display update visible!
+    display.fill(0)
+    display.show()
+
+    # Load default font.
+    font = ImageFont.load_default()
+    #font=ImageFont.truetype("/usr/share/fonts/truetype/freefont/FreeSansBold.ttf", 10)
+
+    # Get drawing object to draw on image
+    image = Image.new('1', (display.width, display.height)) 
+    draw = ImageDraw.Draw(image)
  	
+    # Draw a white filled box to clear the image.
+    draw.rectangle((0, 0, display.width, display.height), outline=255, fill=255)
+
+    while True:
         # Draw a white filled box to clear the image.
         draw.rectangle((0, 0, display.width, display.height), outline=255, fill=255)
 
@@ -233,25 +235,28 @@ def LCD ():
         Timestamp = time.localtime()
         current_time =  time.strftime("%H:%M:%S", Timestamp)
 
-        if current_time < '18:00:00' and current_time > '06:00:00':
+        if current_time < '18:00:00' and current_time > '06:00:00':     # What time will be the next feeding
             feeding_time = '18:00:00'
         else:
             feeding_time = '6:00:00'
         
-        if toggle == 1:
+        if toggle == 1:            # if lamp is on display ON else display OFF
             lampStatus = 'ON'
         else:
             lampStatus = 'OFF'
         
-        turnOff = '24:00:00' - current_time
+        lightsOut = '00:00:00'
+        if timer == 1:
+            lightsOut = end_time.strftime("%H:%M:%S")
 
-        draw.text((1,0), current_time, font=font)
-        draw.text((1,8), 'Water depth: ' + str(actualDepth) + 'cm', font=font)
-        draw.text((1,16), 'Next feeding: ' + feeding_time, font=font)
-        draw.text((1,24), 'Lamp status: ' + lampStatus, font=font)
-        draw.text((1,32), 'Turn off lamp in: ' + turnOff + ' hours', font=font)
+        draw.text((1,0), current_time, font=font)                           # current time
+        draw.text((1,8), 'Depth: ' + str(actualDepth) + 'cm', font=font)    # depth of the water
+        draw.text((1,16), 'NF: ' + feeding_time, font=font)                 # Next feeding time
+        draw.text((1,24), 'Lamp: ' + lampStatus, font=font)                 # Status of the lamp
+        draw.text((1,32), 'LO: ' + lightsOut, font=font)        # hours till the lamp will turn off
         display.image(image)
         display.show()
+        time.sleep(1)
 
         if exit_event.is_set():
             break
@@ -291,8 +296,8 @@ sendDataThread = threading.Thread(target=sendData)
 lightThread.start()
 depthThread.start()
 feederThread.start()
-# lcdThread.start()
-sendDataThread.start()
+lcdThread.start()
+# sendDataThread.start()
 
 try:
     while(True):
